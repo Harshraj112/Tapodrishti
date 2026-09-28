@@ -19,7 +19,6 @@ Thumbs.db
 
 # Project outputs / generated content
 logs/
-model_artifacts/
 results/
 baghewala_dataset/
 baghewala_sample_dataset/
