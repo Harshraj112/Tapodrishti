@@ -20,8 +20,6 @@ Thumbs.db
 # Project outputs / generated content
 logs/
 results/
-baghewala_dataset/
-baghewala_sample_dataset/
 *.log
 *.sqlite3
 *.db

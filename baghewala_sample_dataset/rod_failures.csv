@@ -1,0 +1,10 @@
+failure_id,well_id,cycle_number_at_failure,day_index_at_failure,rod_age_days,cumulative_rod_float_days,failure_type,depth_of_failure_m
+0,BGW-03,4,62,333,19,parted_rod,775.0
+1,BGW-09,5,23,384,27,parted_rod,921.3
+2,BGW-10,3,87,268,8,parted_rod,726.4
+3,BGW-11,8,15,646,247,parted_rod,740.7
+4,BGW-13,4,68,339,141,parted_rod,771.5
+5,BGW-14,4,56,327,109,pump_wear,776.1
+6,BGW-14,9,62,783,206,parted_rod,768.7
+7,BGW-16,5,23,384,16,pump_wear,905.2
+8,BGW-18,4,20,291,119,parted_rod,890.0
