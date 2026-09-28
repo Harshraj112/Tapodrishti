@@ -2,7 +2,7 @@ import os
 import logging
 from typing import List
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, abort
 
 from model_store import load_model_bundle
 
@@ -38,6 +38,28 @@ def health():
     if "MODEL" in globals():
         return jsonify({"status": "ok"}), 200
     return jsonify({"status": "error", "error": globals().get("MODEL_LOAD_ERROR")}), 503
+
+
+@app.route("/", methods=["GET"])
+def index():
+    # Serve dashboard/index.html if present in the repo's `dashboard/` folder
+    dashboard_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard")
+    index_path = os.path.join(dashboard_dir, "index.html")
+    if os.path.isfile(index_path):
+        return send_from_directory(dashboard_dir, "index.html")
+    return jsonify({"error": "Dashboard not found"}), 404
+
+
+@app.route("/<path:filename>", methods=["GET"])
+def serve_dashboard_file(filename):
+    # Avoid interfering with API endpoints like /predict and /health
+    if filename in ("predict", "health"):
+        abort(404)
+    dashboard_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard")
+    file_path = os.path.join(dashboard_dir, filename)
+    if os.path.isfile(file_path):
+        return send_from_directory(dashboard_dir, filename)
+    return jsonify({"error": "Not found"}), 404
 
 
 def _predict_one(model, instance: dict) -> dict:
