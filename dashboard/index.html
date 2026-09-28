@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#18231f">
+  <title>Baghewala | Field Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#top" aria-label="Baghewala field operations home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="brand-name">BAGHEWALA<span>FIELD SYSTEMS</span></span>
+      </a>
+
+      <div class="rail-label">WORKSPACE</div>
+      <nav class="nav-list">
+        <a class="nav-link active" href="#overview"><i data-lucide="layout-dashboard"></i><span>Overview</span></a>
+        <a class="nav-link" href="#fleet"><i data-lucide="list-filter"></i><span>Well fleet</span></a>
+        <a class="nav-link" href="#well-detail"><i data-lucide="activity"></i><span>Well analytics</span></a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-well">
+        <div class="sidebar-well-icon"><i data-lucide="map-pin"></i></div>
+        <div><strong>Rajasthan, IN</strong><span>Jodhpur Sandstone</span></div>
+      </div>
+      <div class="sidebar-foot"><span class="status-dot"></span><span id="sidebar-status">Connecting to model service</span></div>
+    </aside>
+
+    <main class="main-content" id="top">
+      <header class="topbar">
+        <div class="breadcrumb"><span>FIELD SYSTEMS</span><i data-lucide="chevron-right"></i><strong>OPERATIONS</strong></div>
+        <div class="topbar-actions">
+          <span class="data-mode"><span class="mode-dot"></span><span id="data-source-label">Loading dataset</span></span>
+          <button class="icon-button" id="refresh-button" type="button" aria-label="Reload data and model artifact" title="Reload data and model artifact"><i data-lucide="refresh-cw"></i></button>
+          <div class="user-badge" aria-label="Operator profile">OP</div>
+        </div>
+      </header>
+
+      <div class="content-wrap">
+        <section class="page-heading" id="overview">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> BAGHEWALA DIGITAL TWIN <span class="eyebrow-code">/ 01</span></div>
+            <h1>Field operations</h1>
+            <p class="heading-meta"><span id="updated-at">Waiting for snapshot</span><span class="meta-divider"></span><span id="model-training-label">Waiting for saved model</span><span class="meta-divider"></span><span id="data-as-of">Waiting for source date</span><span class="meta-divider"></span><span id="next-refresh-at">Next refresh pending</span><span class="meta-divider"></span><span id="well-count-label">Production fleet</span></p>
+          </div>
+          <a class="text-link" href="#well-detail"><i data-lucide="arrow-down-right"></i> Selected well</a>
+        </section>
+
+        <div class="demo-notice" role="note">
+          <i data-lucide="flask-conical"></i>
+          <span><strong>Demonstration data</strong> Model outputs are synthetic estimates, not operating instructions.</span>
+          <span class="notice-tag">ADVISORY ONLY</span>
+        </div>
+
+        <section class="alert-panel" id="alert-panel" aria-live="polite" hidden>
+          <div class="alert-heading"><div><div class="section-kicker">SNAPSHOT CHANGES</div><h2>New model alerts</h2></div><span class="alert-count" id="alert-count">0</span></div>
+          <div class="alert-list" id="alert-list"></div>
+        </section>
+
+        <section class="metric-grid" aria-label="Fleet summary" id="summary-metrics">
+          <article class="metric metric-green">
+            <div class="metric-top"><span>Wells monitored</span><i data-lucide="database"></i></div>
+            <div class="metric-value" id="metric-wells">--</div>
+            <div class="metric-foot"><span class="metric-mark"></span>Latest available records</div>
+          </article>
+          <article class="metric metric-amber">
+            <div class="metric-top"><span>Median cycle SOR</span><i data-lucide="droplets"></i></div>
+            <div class="metric-value"><span id="metric-sor">--</span><small> bbl/bbl</small></div>
+            <div class="metric-foot">Across each well's latest cycle</div>
+          </article>
+          <article class="metric metric-red">
+            <div class="metric-top"><span>High rod risk</span><i data-lucide="triangle-alert"></i></div>
+            <div class="metric-value" id="metric-risk">--</div>
+            <div class="metric-foot">30-day model risk tier</div>
+          </article>
+          <article class="metric metric-blue">
+            <div class="metric-top"><span>Mean pump fillage</span><i data-lucide="gauge"></i></div>
+            <div class="metric-value"><span id="metric-fillage">--</span><small>%</small></div>
+            <div class="metric-foot">Latest production day per well</div>
+          </article>
+        </section>
+
+        <section class="workspace-grid">
+          <section class="panel fleet-panel" id="fleet">
+            <div class="panel-heading">
+              <div>
+                <div class="section-kicker">PRODUCTION ASSETS</div>
+                <h2>Well fleet <span class="count-chip" id="fleet-count">--</span></h2>
+              </div>
+              <button class="subtle-button" id="sort-risk-button" type="button"><i data-lucide="arrow-down-wide-narrow"></i><span>Risk priority</span></button>
+            </div>
+            <div class="table-tools">
+              <label class="search-box"><i data-lucide="search"></i><input id="well-search" type="search" placeholder="Search well or fault" autocomplete="off"></label>
+              <label class="select-wrap"><span class="sr-only">Filter wells</span><select id="well-filter"><option value="all">All wells</option><option value="attention">Needs attention</option><option value="rod_float">Rod float</option><option value="high_risk">High risk</option></select><i data-lucide="chevron-down"></i></label>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th scope="col">WELL</th><th scope="col">SOR</th><th scope="col">FILLAGE</th><th scope="col">CARD</th><th scope="col">30D RISK</th><th scope="col">ADVISORY</th></tr></thead>
+                <tbody id="fleet-body"><tr><td class="loading-row" colspan="6">Loading fleet signals...</td></tr></tbody>
+              </table>
+            </div>
+            <div class="panel-foot"><span><span class="status-dot"></span> Model snapshot</span><span id="fleet-footnote">Select a well to inspect its latest cycle</span></div>
+          </section>
+
+          <aside class="panel attention-panel">
+            <div class="panel-heading compact-heading">
+              <div><div class="section-kicker">TRIAGE QUEUE</div><h2>Review first</h2></div>
+              <span class="attention-icon"><i data-lucide="scan-eye"></i></span>
+            </div>
+            <p class="panel-copy">Wells ranked by estimated 30-day rod-failure probability.</p>
+            <div class="priority-list" id="priority-list"><div class="loading-row">Calculating well risk...</div></div>
+            <div class="attention-legend"><span><i class="legend-dot legend-high"></i>High</span><span><i class="legend-dot legend-medium"></i>Medium</span><span><i class="legend-dot legend-low"></i>Low</span></div>
+          </aside>
+        </section>
+
+        <section class="detail-section" id="well-detail">
+          <div class="detail-heading">
+            <div>
+              <div class="section-kicker">ASSET DRILL-DOWN</div>
+              <h2>Well condition</h2>
+            </div>
+            <div class="detail-controls">
+              <label class="select-wrap well-picker"><span class="sr-only">Choose a well</span><select id="selected-well"></select><i data-lucide="chevron-down"></i></label>
+              <button class="primary-button" id="optimize-button" type="button"><i data-lucide="sliders-horizontal"></i><span>Run CSS scenario</span></button>
+            </div>
+          </div>
+
+          <div class="detail-layout">
+            <div class="detail-main">
+              <div class="well-summary-strip">
+                <div><span class="section-kicker">SELECTED WELL</span><h3 id="detail-well-title">Choose a well</h3></div>
+                <div class="well-summary-values" id="well-summary-values"></div>
+              </div>
+
+              <div class="charts-grid">
+                <article class="chart-panel">
+                  <div class="chart-title"><div><span>PRODUCTION PHASE</span><h3>Oil rate</h3></div><span class="chart-unit">bbl / day</span></div>
+                  <div class="chart-area" id="oil-chart"><div class="chart-empty">Select a well to load production</div></div>
+                  <div class="chart-axis"><span>Start of latest cycle</span><span>Day in cycle</span><span>Latest</span></div>
+                </article>
+                <article class="chart-panel">
+                  <div class="chart-title"><div><span>COOLING RESPONSE</span><h3>Viscosity</h3></div><span class="chart-unit">cP</span></div>
+                  <div class="chart-area" id="viscosity-chart"><div class="chart-empty">Awaiting well data</div></div>
+                  <div class="chart-axis"><span>Post-soak</span><span>Production day</span><span>Latest</span></div>
+                </article>
+                <article class="chart-panel">
+                  <div class="chart-title"><div><span>PUMP PERFORMANCE</span><h3>Fillage</h3></div><span class="chart-unit">%</span></div>
+                  <div class="chart-area" id="fillage-chart"><div class="chart-empty">Awaiting well data</div></div>
+                  <div class="chart-axis"><span>Cycle start</span><span>Production day</span><span>Latest</span></div>
+                </article>
+              </div>
+
+              <div class="cycle-history-panel">
+                <div class="chart-title"><div><span>THERMAL RECOVERY HISTORY</span><h3>Recent CSS cycles</h3></div><span class="chart-unit">oil / SOR</span></div>
+                <div class="cycle-history" id="cycle-history"><span class="muted">Select a well to see cycle history.</span></div>
+              </div>
+            </div>
+
+            <aside class="detail-aside">
+              <section class="signal-block">
+                <div class="signal-heading"><span class="section-kicker">SURFACE DIAGNOSTICS</span><i data-lucide="activity"></i></div>
+                <div class="fault-result" id="fault-result"><div class="loading-row">Waiting for card prediction</div></div>
+                <div class="signal-divider"></div>
+                <div class="risk-heading"><span>Rod failure risk</span><strong id="risk-probability">--</strong></div>
+                <div class="risk-meter"><span id="risk-meter-fill"></span></div>
+                <div class="risk-caption"><span>30-day estimate</span><span id="risk-tier">--</span></div>
+              </section>
+
+              <section class="advisor-block">
+                <div class="advisor-icon"><i data-lucide="sliders-horizontal"></i></div>
+                <div class="section-kicker">SRP ADVISOR</div>
+                <div class="advice-action" id="advice-action">Waiting for well data</div>
+                <p id="advice-rationale">Select a well to view the current model advisory.</p>
+                <div class="advice-setpoints" id="advice-setpoints"></div>
+                <span class="human-review">Operator review required</span>
+              </section>
+
+              <section class="forecast-block">
+                <div class="section-kicker">GAP 1 SAVED MODEL</div>
+                <h3>Test a CSS design</h3>
+                <form id="css-forecast-form">
+                  <label><span>Steam <small>bbl CWE</small></span><input name="steam_volume_cwe_bbl" type="number" min="2500" max="8000" step="100" value="5000" required></label>
+                  <label><span>Injection pressure <small>kPa</small></span><input name="injection_pressure_kpa" type="number" min="5500" max="10000" step="100" value="7500" required></label>
+                  <label><span>Soak time <small>days</small></span><input name="soak_time_days" type="number" min="2" max="9" step="0.5" value="5" required></label>
+                  <button class="forecast-button" type="submit"><i data-lucide="scan-search"></i><span>Predict this design</span></button>
+                </form>
+                <div class="forecast-results" id="forecast-results" hidden>
+                  <div class="section-kicker">SAVED MODEL OUTPUT</div>
+                  <div class="forecast-values" id="forecast-values"></div>
+                  <div class="model-stamp" id="forecast-model-stamp"></div>
+                </div>
+              </section>
+
+              <section class="optimizer-block" id="optimizer-results" hidden>
+                <div class="section-kicker">CSS SCENARIO</div>
+                <div class="optimizer-state" id="optimizer-state">Calculating candidate...</div>
+                <div id="optimizer-values"></div>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <footer class="page-footer"><span>WELL-TO-SURFACE DIGITAL TWIN</span><span id="footer-source">Synthetic dataset · decision support only</span></footer>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

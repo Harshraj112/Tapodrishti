@@ -1,0 +1,32 @@
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor / OS artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project outputs / generated content
+logs/
+model_artifacts/
+results/
+baghewala_dataset/
+baghewala_sample_dataset/
+*.log
+*.sqlite3
+*.db
+
+# Ignore markdown docs except the project README
+*.md
+!README.md
