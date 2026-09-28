@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 def load_model(path: str = None):
     bundle = load_model_bundle(path) if path else load_model_bundle()
-    return bundle["models"]["gap3_rod_risk_model"]
+    return bundle
 
 
 def ensure_model_loaded():
@@ -25,7 +25,9 @@ def ensure_model_loaded():
     if "MODEL" in globals() or "MODEL_LOAD_ERROR" in globals():
         return
     try:
-        MODEL = load_model(MODEL_PATH)
+        bundle = load_model(MODEL_PATH)
+        MODEL = bundle["models"]["gap3_rod_risk_model"]
+        MODEL_BUNDLE = bundle
         logger.info("Model loaded successfully.")
     except Exception as e:
         MODEL_LOAD_ERROR = str(e)
@@ -60,6 +62,23 @@ def serve_dashboard_file(filename):
     if os.path.isfile(file_path):
         return send_from_directory(dashboard_dir, filename)
     return jsonify({"error": "Not found"}), 404
+
+
+@app.route("/model_info", methods=["GET"])
+def model_info():
+    """Return model bundle metadata or the load error for debugging."""
+    ensure_model_loaded()
+    if "MODEL" in globals():
+        bundle = globals().get("MODEL_BUNDLE") or {}
+        info = {
+            "loaded": True,
+            "training_summary": bundle.get("training_summary"),
+            "training_data_dir": bundle.get("training_data_dir"),
+            "training_data_fingerprint": bundle.get("training_data_fingerprint"),
+            "versions": bundle.get("versions"),
+        }
+        return jsonify(info), 200
+    return jsonify({"loaded": False, "error": globals().get("MODEL_LOAD_ERROR")}), 503
 
 
 def _predict_one(model, instance: dict) -> dict:
