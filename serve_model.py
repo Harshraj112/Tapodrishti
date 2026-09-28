@@ -20,6 +20,7 @@ def load_model(path: str = None):
 
 
 def ensure_model_loaded():
+from pipeline import TwinDataset, WellDigitalTwin
     """Load the model once on-demand. Avoids using removed Flask hooks."""
     global MODEL, MODEL_LOAD_ERROR
     if "MODEL" in globals() or "MODEL_LOAD_ERROR" in globals():
@@ -90,6 +91,15 @@ def _predict_one(model, instance: dict) -> dict:
 
 
 @app.route("/predict", methods=["POST"])
+def _make_twin():
+    """Create a WellDigitalTwin using the on-disk dataset and the loaded bundle.
+    Returns (twin, dataset) or raises an exception if loading fails."""
+    ensure_model_loaded()
+    if "MODEL" not in globals():
+        raise RuntimeError(globals().get("MODEL_LOAD_ERROR") or "Model not loaded")
+    dataset = TwinDataset.load()
+    twin = WellDigitalTwin(dataset, model_bundle=globals().get("MODEL_BUNDLE"))
+    return twin, dataset
 def predict():
     ensure_model_loaded()
     if "MODEL" not in globals():
@@ -113,10 +123,85 @@ def predict():
 
 
 if __name__ == "__main__":
-    # For local development only; production should use gunicorn
-    port = int(os.getenv("PORT", 8080))
+@app.route("/api/overview", methods=["GET"])
+def api_overview():
     try:
+        twin, dataset = _make_twin()
+        fleet = twin.fleet_snapshot()
+        # summary metrics
+        well_count = len(fleet)
+        median_sor = float(dataset.css_cycles.cycle_sor.median()) if len(dataset.css_cycles) else 0.0
+        high_risk_count = sum(1 for w in fleet if w.get("risk_tier") == 'high')
+        mean_fillage = float(dataset.daily_production.pump_fillage_pct.mean()) if len(dataset.daily_production) else 0.0
+        summary = {"well_count": well_count, "median_sor": median_sor,
+                   "high_risk_count": high_risk_count, "mean_fillage_pct": mean_fillage}
+        resp = {
+            "fleet": fleet,
+            "refreshed_at": datetime.utcnow().isoformat(),
+            "model_trained_at": globals().get("MODEL_BUNDLE", {}).get("trained_at"),
+            "data_as_of": (str(dataset.daily_production['date'].max()) if 'date' in dataset.daily_production.columns else None),
+            "next_refresh_at": None,
+            "model_artifact": os.path.basename(MODEL_PATH) if MODEL_PATH else None,
+            "data_source": str(dataset),
+            "summary": summary,
+            "alerts": [],
+            "last_refresh_error": None,
+            "model_artifact": globals().get("MODEL_BUNDLE", {}).get("training_data_dir") or os.path.basename(MODEL_PATH) if MODEL_PATH else None,
+        }
+        return jsonify(resp), 200
+    except Exception as e:
+        logger.exception("/api/overview failed: %s", e)
+        return jsonify({"error": str(e)}), 500
+    # For local development only; production should use gunicorn
+@app.route("/api/wells/<well_id>", methods=["GET"])
+def api_well_detail(well_id):
+    try:
+        twin, _ = _make_twin()
+        detail = twin.well_detail(well_id)
+        return jsonify(detail), 200
+    except Exception as e:
+        logger.exception("/api/wells/%s failed: %s", well_id, e)
+        return jsonify({"error": str(e)}), 500
+    port = int(os.getenv("PORT", 8080))
+@app.route("/api/wells/<well_id>/css-recommendation", methods=["POST"])
+def api_css_recommendation(well_id):
+    try:
+        twin, _ = _make_twin()
+        rec = twin.css_recommendation(well_id)
+        return jsonify(rec), 200
+    except Exception as e:
+        logger.exception("/api/wells/%s/css-recommendation failed: %s", well_id, e)
+        return jsonify({"error": str(e)}), 500
+    try:
+@app.route("/api/wells/<well_id>/css-forecast", methods=["POST"])
+def api_css_forecast(well_id):
+    try:
+        twin, _ = _make_twin()
+        payload = request.get_json(force=True)
+        # For saved model forecast we reuse the forecaster with supplied params
+        well_features = twin._well_features(well_id)
+        forecast = twin.forecaster.predict(well_features, payload)
+        model_info = {
+            "artifact": globals().get("MODEL_BUNDLE", {}).get("training_data_dir") or os.path.basename(MODEL_PATH) if MODEL_PATH else None,
+            "trained_at": globals().get("MODEL_BUNDLE", {}).get("trained_at"),
+            "training_data_matches_current": True,
+        }
+        return jsonify({"forecast": forecast, "model": model_info}), 200
+    except Exception as e:
+        logger.exception("/api/wells/%s/css-forecast failed: %s", well_id, e)
+        return jsonify({"error": str(e)}), 500
         MODEL = load_model(MODEL_PATH)
+@app.route("/api/refresh", methods=["POST"])
+def api_refresh():
+    # lightweight: reload model bundle from disk
+    try:
+        bundle = load_model_bundle(MODEL_PATH) if MODEL_PATH else load_model_bundle()
+        globals()["MODEL_BUNDLE"] = bundle
+        globals()["MODEL"] = bundle["models"]["gap3_rod_risk_model"]
+        return jsonify({"refreshed": True}), 200
+    except Exception as e:
+        logger.exception("/api/refresh failed: %s", e)
+        return jsonify({"refreshed": False, "error": str(e)}), 500
     except Exception:
         logger.exception("Model failed to load on startup.")
     app.run(host="0.0.0.0", port=port)
